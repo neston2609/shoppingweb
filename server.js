@@ -579,6 +579,62 @@ function normalizeModelList(provider, models) {
     .sort((a, b) => a.id.localeCompare(b.id));
 }
 
+const MODEL_CACHE_TTL_MS = 30 * 60 * 1000;
+const aiModelCache = new Map();
+const fallbackAiModels = {
+  openai: [
+    { id: "gpt-5-mini", name: "gpt-5-mini" },
+    { id: "gpt-5", name: "gpt-5" },
+    { id: "gpt-4.1-mini", name: "gpt-4.1-mini" },
+    { id: "gpt-4.1", name: "gpt-4.1" },
+  ],
+  gemini: [
+    { id: "gemini-2.5-flash", name: "gemini-2.5-flash" },
+    { id: "gemini-2.5-pro", name: "gemini-2.5-pro" },
+    { id: "gemini-2.0-flash", name: "gemini-2.0-flash" },
+  ],
+  claude: [
+    { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4" },
+    { id: "claude-opus-4-1-20250805", name: "Claude Opus 4.1" },
+    { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku" },
+  ],
+};
+
+function modelCacheKey(provider, settings) {
+  return `${provider}:${settings.endpoint || "default"}`;
+}
+
+function cachedModelResponse(provider, settings) {
+  const cached = aiModelCache.get(modelCacheKey(provider, settings));
+  if (!cached || Date.now() - cached.createdAt > MODEL_CACHE_TTL_MS) {
+    return null;
+  }
+  return { provider, models: cached.models, source: "cache" };
+}
+
+function setModelCache(provider, settings, models) {
+  aiModelCache.set(modelCacheKey(provider, settings), { createdAt: Date.now(), models });
+}
+
+function fallbackModelResponse(provider, warning) {
+  const models = normalizeModelList(provider, fallbackAiModels[provider] || []);
+  return { provider, models, source: "fallback", warning };
+}
+
+async function readJsonResponse(response) {
+  return response.json().catch(() => ({}));
+}
+
+async function modelResponseOrFallback(provider, response, body, fallbackMessage) {
+  if (response.ok) {
+    return null;
+  }
+  if (response.status === 429 && fallbackAiModels[provider]) {
+    return fallbackModelResponse(provider, fallbackMessage || "Provider rate limit reached. Showing recommended fallback models.");
+  }
+  throw new Error(body.error?.message || body.error || `Could not fetch ${provider} models`);
+}
+
 function customModelsEndpoint(endpoint) {
   const value = String(endpoint || "").trim();
   if (!value) return "";
@@ -609,39 +665,53 @@ async function listAiModels(payload) {
     endpoint: String(payload.endpoint || "").trim() || saved.endpoint,
   };
 
+  const cached = cachedModelResponse(provider, settings);
+  if (cached) {
+    return cached;
+  }
+
   if (provider === "openai") {
     const apiKey = settings.apiKey || process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error("OpenAI API key is not configured");
+    if (!apiKey) return fallbackModelResponse(provider, "OpenAI API key is not configured. Showing recommended models.");
     const response = await fetch("https://api.openai.com/v1/models", {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error?.message || "Could not fetch OpenAI models");
-    return { provider, models: normalizeModelList(provider, body.data || []) };
+    const body = await readJsonResponse(response);
+    const fallback = await modelResponseOrFallback(provider, response, body, "OpenAI returned 429 rate limit. Showing recommended models instead.");
+    if (fallback) return fallback;
+    const models = normalizeModelList(provider, body.data || []);
+    setModelCache(provider, settings, models);
+    return { provider, models, source: "api" };
   }
 
   if (provider === "gemini") {
     const apiKey = settings.apiKey || process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("Gemini API key is not configured");
+    if (!apiKey) return fallbackModelResponse(provider, "Gemini API key is not configured. Showing recommended models.");
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error?.message || "Could not fetch Gemini models");
+    const body = await readJsonResponse(response);
+    const fallback = await modelResponseOrFallback(provider, response, body, "Gemini returned 429 rate limit. Showing recommended models instead.");
+    if (fallback) return fallback;
     const models = (body.models || []).filter((model) => !model.supportedGenerationMethods || model.supportedGenerationMethods.includes("generateContent"));
-    return { provider, models: normalizeModelList(provider, models) };
+    const normalized = normalizeModelList(provider, models);
+    setModelCache(provider, settings, normalized);
+    return { provider, models: normalized, source: "api" };
   }
 
   if (provider === "claude") {
     const apiKey = settings.apiKey || process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new Error("Claude API key is not configured");
+    if (!apiKey) return fallbackModelResponse(provider, "Claude API key is not configured. Showing recommended models.");
     const response = await fetch("https://api.anthropic.com/v1/models?limit=1000", {
       headers: {
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
       },
     });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error?.message || "Could not fetch Claude models");
-    return { provider, models: normalizeModelList(provider, body.data || []) };
+    const body = await readJsonResponse(response);
+    const fallback = await modelResponseOrFallback(provider, response, body, "Claude returned 429 rate limit. Showing recommended models instead.");
+    if (fallback) return fallback;
+    const models = normalizeModelList(provider, body.data || []);
+    setModelCache(provider, settings, models);
+    return { provider, models, source: "api" };
   }
 
   const endpoint = customModelsEndpoint(settings.endpoint);
@@ -650,9 +720,11 @@ async function listAiModels(payload) {
   const response = await fetch(endpoint, {
     headers: { Authorization: `Bearer ${settings.apiKey}` },
   });
-  const body = await response.json();
+  const body = await readJsonResponse(response);
   if (!response.ok) throw new Error(body.error?.message || body.error || "Could not fetch custom models");
-  return { provider, models: normalizeModelList(provider, body.data || body.models || []) };
+  const models = normalizeModelList(provider, body.data || body.models || []);
+  setModelCache(provider, settings, models);
+  return { provider, models, source: "api" };
 }
 
 async function generateProductAutofill(payload) {

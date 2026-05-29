@@ -1309,7 +1309,7 @@ app.addEventListener("click", async (event) => {
       const result = await response.json().catch(() => ({ error: "Fetch models failed" }));
       if (!response.ok) throw new Error(result.error || "Fetch models failed");
       populateModelOptions(provider, result.models || []);
-      passiveToast(`Loaded ${(result.models || []).length} ${provider} models`);
+      passiveToast(result.warning || `Loaded ${(result.models || []).length} ${provider} models from ${result.source || "provider"}`);
     } catch (error) {
       passiveToast(error.message);
     } finally {
