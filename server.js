@@ -629,10 +629,32 @@ async function modelResponseOrFallback(provider, response, body, fallbackMessage
   if (response.ok) {
     return null;
   }
-  if (response.status === 429 && fallbackAiModels[provider]) {
-    return fallbackModelResponse(provider, fallbackMessage || "Provider rate limit reached. Showing recommended fallback models.");
+  const message = String(body.error?.message || body.error || "");
+  if (fallbackAiModels[provider] && (response.status === 429 || /location|country|region|not support/i.test(message))) {
+    return fallbackModelResponse(provider, /location|country|region|not support/i.test(message)
+      ? `${provider} API is not available from this server/location. Showing recommended models; use Gemini, Claude, or Custom for live AI calls.`
+      : fallbackMessage || "Provider rate limit reached. Showing recommended fallback models.");
   }
-  throw new Error(body.error?.message || body.error || `Could not fetch ${provider} models`);
+  throw new Error(message || `Could not fetch ${provider} models`);
+}
+
+function isLocationUnsupportedError(error) {
+  return /location|country|region|not support|unsupported.*api/i.test(String(error?.message || error || ""));
+}
+
+function providerHasCredentials(provider, settings) {
+  if (provider === "openai") return Boolean(settings.apiKey || process.env.OPENAI_API_KEY);
+  if (provider === "gemini") return Boolean(settings.apiKey || process.env.GEMINI_API_KEY);
+  if (provider === "claude") return Boolean(settings.apiKey || process.env.ANTHROPIC_API_KEY);
+  if (provider === "custom") return Boolean(settings.apiKey && settings.endpoint);
+  return false;
+}
+
+async function runAutofillProvider(provider, settings, prompt, imageDataUrl) {
+  if (provider === "gemini") return runGeminiAutofill(settings, prompt, imageDataUrl);
+  if (provider === "claude") return runClaudeAutofill(settings, prompt, imageDataUrl);
+  if (provider === "custom") return runCustomAutofill(settings, prompt, imageDataUrl);
+  return runOpenAiAutofill(settings, prompt, imageDataUrl);
 }
 
 function customModelsEndpoint(endpoint) {
@@ -734,16 +756,37 @@ async function generateProductAutofill(payload) {
 
   const aiSettings = await store.readAiSettings({ includeSecrets: true });
   const provider = aiSettings.defaultProvider || "openai";
-  const settings = aiSettings.providers?.[provider] || {};
   const prompt = productAutofillPrompt(payload);
-  const text =
-    provider === "gemini"
-      ? await runGeminiAutofill(settings, prompt, payload.imageDataUrl)
-      : provider === "claude"
-        ? await runClaudeAutofill(settings, prompt, payload.imageDataUrl)
-        : provider === "custom"
-          ? await runCustomAutofill(settings, prompt, payload.imageDataUrl)
-          : await runOpenAiAutofill(settings, prompt, payload.imageDataUrl);
+  const providerOrder = [provider, "gemini", "claude", "custom", "openai"].filter((item, index, list) => item && list.indexOf(item) === index);
+  let text = "";
+  let usedProvider = provider;
+  let usedSettings = aiSettings.providers?.[provider] || {};
+  let firstError = null;
+
+  for (const candidate of providerOrder) {
+    const candidateSettings = aiSettings.providers?.[candidate] || {};
+    if (!providerHasCredentials(candidate, candidateSettings)) {
+      continue;
+    }
+    try {
+      text = await runAutofillProvider(candidate, candidateSettings, prompt, payload.imageDataUrl);
+      usedProvider = candidate;
+      usedSettings = candidateSettings;
+      break;
+    } catch (error) {
+      firstError ||= error;
+      if (!isLocationUnsupportedError(error) && candidate === provider) {
+        throw error;
+      }
+    }
+  }
+
+  if (!text) {
+    if (firstError && isLocationUnsupportedError(firstError)) {
+      throw new Error("Selected AI provider is not available from this server/location. Please set Gemini, Claude, or Custom as the default AI provider.");
+    }
+    throw firstError || new Error("No AI provider API key is configured");
+  }
 
   const result = extractJsonObject(text);
   return {
@@ -756,8 +799,8 @@ async function generateProductAutofill(payload) {
     reviewLinks: Array.isArray(result.reviewLinks) ? result.reviewLinks.filter(Boolean).map(String) : [],
     confidence: String(result.confidence || "low"),
     notes: String(result.notes || ""),
-    provider,
-    model: String(settings.model || ""),
+    provider: usedProvider,
+    model: String(usedSettings.model || ""),
   };
 }
 
