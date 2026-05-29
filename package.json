@@ -1,0 +1,20 @@
+{
+  "name": "shopping-web",
+  "version": "1.0.0",
+  "description": "A shopping application with a storefront, backend management area, and PostgreSQL persistence.",
+  "main": "server.js",
+  "scripts": {
+    "check": "node --check server.js && node --check database.js && node --check public/app.js",
+    "test": "npm run check",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "nodemailer": "^8.0.9",
+    "openai": "^6.39.1",
+    "pg": "^8.21.0"
+  }
+}

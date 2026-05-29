@@ -1,0 +1,126 @@
+{
+  "categories": [
+    {
+      "id": "cat-electronics",
+      "name": "Electronics",
+      "color": "#1aa7ec"
+    },
+    {
+      "id": "cat-fashion",
+      "name": "Fashion",
+      "color": "#ff6b6b"
+    },
+    {
+      "id": "cat-home",
+      "name": "Home",
+      "color": "#36b37e"
+    },
+    {
+      "id": "cat-grocery",
+      "name": "Grocery",
+      "color": "#ffb020"
+    }
+  ],
+  "products": [
+    {
+      "id": "prd-headphones",
+      "name": "Nova Wireless Headphones",
+      "categoryId": "cat-electronics",
+      "price": 1290,
+      "stock": 24,
+      "rating": 4.8,
+      "accent": "#1aa7ec",
+      "description": "Soft ear pads, long battery life, and bright everyday sound."
+    },
+    {
+      "id": "prd-jacket",
+      "name": "City Pop Wind Jacket",
+      "categoryId": "cat-fashion",
+      "price": 890,
+      "stock": 18,
+      "rating": 4.6,
+      "accent": "#ff6b6b",
+      "description": "Lightweight color-block jacket for travel and weekend errands."
+    },
+    {
+      "id": "prd-lamp",
+      "name": "Glow Desk Lamp",
+      "categoryId": "cat-home",
+      "price": 740,
+      "stock": 15,
+      "rating": 4.7,
+      "accent": "#36b37e",
+      "description": "Three brightness levels with a tidy footprint for small desks."
+    },
+    {
+      "id": "prd-snackbox",
+      "name": "Rainbow Snack Box",
+      "categoryId": "cat-grocery",
+      "price": 320,
+      "stock": 42,
+      "rating": 4.5,
+      "accent": "#ffb020",
+      "description": "A cheerful mix of sweet, salty, and crunchy treats."
+    },
+    {
+      "id": "prd-watch",
+      "name": "Pulse Mini Smartwatch",
+      "categoryId": "cat-electronics",
+      "price": 1590,
+      "stock": 12,
+      "rating": 4.9,
+      "accent": "#7c5cff",
+      "description": "Compact fitness tracking, sleep insights, and quick notifications."
+    },
+    {
+      "id": "prd-mug",
+      "name": "Morning Ceramic Mug",
+      "categoryId": "cat-home",
+      "price": 260,
+      "stock": 30,
+      "rating": 4.4,
+      "accent": "#00b8a9",
+      "description": "A sturdy hand-feel mug with a glossy two-tone finish."
+    }
+  ],
+  "shippingCosts": [
+    {
+      "id": "ship-bangkok",
+      "zone": "Bangkok",
+      "cost": 35,
+      "freeOver": 900,
+      "eta": "1-2 days"
+    },
+    {
+      "id": "ship-central",
+      "zone": "Central Thailand",
+      "cost": 55,
+      "freeOver": 1200,
+      "eta": "2-3 days"
+    },
+    {
+      "id": "ship-north",
+      "zone": "North / Northeast",
+      "cost": 75,
+      "freeOver": 1500,
+      "eta": "3-5 days"
+    },
+    {
+      "id": "ship-south",
+      "zone": "South",
+      "cost": 85,
+      "freeOver": 1600,
+      "eta": "3-5 days"
+    }
+  ],
+  "orderStatuses": [
+    "Pending",
+    "Paid",
+    "Packing",
+    "Shipped",
+    "Completed",
+    "Cancelled"
+  ],
+  "orders": [],
+  "members": []
+}
