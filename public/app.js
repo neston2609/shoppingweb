@@ -87,6 +87,14 @@ function linksToText(links) {
   return (Array.isArray(links) ? links : []).join("\n");
 }
 
+function populateModelOptions(provider, models) {
+  const datalist = document.querySelector(`#${provider}-model-options`);
+  if (!datalist) return;
+  datalist.innerHTML = models
+    .map((model) => `<option value="${escapeHtml(model.id)}">${escapeHtml(model.name || model.id)}</option>`)
+    .join("");
+}
+
 function youtubeEmbedUrl(url) {
   const value = String(url || "").trim();
   const patterns = [
@@ -1034,13 +1042,19 @@ function providerSettings(provider) {
 
 function renderAiProviderFields(provider, label, modelPlaceholder, endpoint = false) {
   const settings = providerSettings(provider);
+  const datalistId = `${provider}-model-options`;
   return `
     <div class="panel ai-provider-panel">
       <div class="panel-title">
         <h3>${label}</h3>
         <span class="status-chip">${settings.apiKeySet ? "Key saved" : "No key"}</span>
       </div>
-      <label>Model <input class="field" name="${provider}Model" value="${escapeHtml(settings.model || "")}" placeholder="${modelPlaceholder}" /></label>
+      <label>Model
+        <input class="field" name="${provider}Model" list="${datalistId}" value="${escapeHtml(settings.model || "")}" placeholder="${modelPlaceholder}" />
+        <datalist id="${datalistId}"></datalist>
+      </label>
+      ${provider === "custom" ? `<span class="muted">Custom model list uses the configured endpoint and tries its OpenAI-compatible /models route.</span>` : ""}
+      <button class="secondary-btn" type="button" data-ai-models-provider="${provider}">${icon("search")} Fetch models</button>
       ${endpoint ? `<label>Endpoint URI <input class="field" name="${provider}Endpoint" value="${escapeHtml(settings.endpoint || "")}" placeholder="https://api.example.com/v1/chat/completions" /></label>` : ""}
       <label>API key <input class="field" name="${provider}ApiKey" type="password" autocomplete="new-password" placeholder="${settings.apiKeySet ? "Saved - leave blank to keep existing" : "Paste API key"}" /></label>
     </div>
@@ -1272,6 +1286,36 @@ app.addEventListener("click", async (event) => {
 
   if (button.dataset.addCart) {
     addToCart(button.dataset.addCart);
+    return;
+  }
+
+  if (button.dataset.aiModelsProvider) {
+    const provider = button.dataset.aiModelsProvider;
+    const form = button.closest("form");
+    const data = new FormData(form);
+    try {
+      button.disabled = true;
+      button.dataset.originalText = button.innerHTML;
+      button.textContent = "Fetching models...";
+      const response = await fetch("/api/admin/ai/models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider,
+          apiKey: data.get(`${provider}ApiKey`),
+          endpoint: data.get(`${provider}Endpoint`),
+        }),
+      });
+      const result = await response.json().catch(() => ({ error: "Fetch models failed" }));
+      if (!response.ok) throw new Error(result.error || "Fetch models failed");
+      populateModelOptions(provider, result.models || []);
+      passiveToast(`Loaded ${(result.models || []).length} ${provider} models`);
+    } catch (error) {
+      passiveToast(error.message);
+    } finally {
+      button.disabled = false;
+      if (button.dataset.originalText) button.innerHTML = button.dataset.originalText;
+    }
     return;
   }
 

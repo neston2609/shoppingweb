@@ -73,7 +73,7 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 ANTHROPIC_MODEL=claude-sonnet-4-20250514
 ```
 
-In **Backend → AI Settings**, choose the default AI provider for product autofill: OpenAI, Gemini, Claude, or a custom OpenAI-compatible endpoint. Then in **Backend → Products**, choose a product image and click **AI เติมข้อมูลจากรูป**. The server sends the image to the selected provider, uses that provider's search capability where supported, and fills Thai product name, descriptions, estimated price, YouTube links, and review links into the form. Review the result before saving.
+In **Backend → AI Settings**, choose the default AI provider for product autofill: OpenAI, Gemini, Claude, or a custom OpenAI-compatible endpoint. Use **Fetch models** to load model IDs from the provider using the saved API key or the key currently typed into the form, then select a suggested model or type one manually. Then in **Backend → Products**, choose a product image and click **AI เติมข้อมูลจากรูป**. The server sends the image to the selected provider, uses that provider's search capability where supported, and fills Thai product name, descriptions, estimated price, YouTube links, and review links into the form. Review the result before saving.
 
 ## Included workflows
 

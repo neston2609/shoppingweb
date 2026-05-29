@@ -565,6 +565,96 @@ async function runCustomAutofill(settings, prompt, imageDataUrl) {
   return body.output_text || body.text || body.choices?.[0]?.message?.content || JSON.stringify(body);
 }
 
+function normalizeModelList(provider, models) {
+  return models
+    .map((model) => {
+      const id = String(model.id || model.name || "").replace(/^models\//, "");
+      return {
+        id,
+        name: String(model.display_name || model.displayName || model.name || id),
+        provider,
+      };
+    })
+    .filter((model) => model.id)
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function customModelsEndpoint(endpoint) {
+  const value = String(endpoint || "").trim();
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    url.pathname = url.pathname.replace(/\/chat\/completions\/?$/, "/models").replace(/\/responses\/?$/, "/models");
+    if (!url.pathname.endsWith("/models")) {
+      url.pathname = `${url.pathname.replace(/\/$/, "")}/models`;
+    }
+    url.search = "";
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
+async function listAiModels(payload) {
+  const provider = String(payload.provider || "").trim();
+  if (!["openai", "gemini", "claude", "custom"].includes(provider)) {
+    throw new Error("Unsupported AI provider");
+  }
+
+  const aiSettings = await store.readAiSettings({ includeSecrets: true });
+  const saved = aiSettings.providers?.[provider] || {};
+  const settings = {
+    ...saved,
+    apiKey: String(payload.apiKey || "").trim() || saved.apiKey,
+    endpoint: String(payload.endpoint || "").trim() || saved.endpoint,
+  };
+
+  if (provider === "openai") {
+    const apiKey = settings.apiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error("OpenAI API key is not configured");
+    const response = await fetch("https://api.openai.com/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error?.message || "Could not fetch OpenAI models");
+    return { provider, models: normalizeModelList(provider, body.data || []) };
+  }
+
+  if (provider === "gemini") {
+    const apiKey = settings.apiKey || process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("Gemini API key is not configured");
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error?.message || "Could not fetch Gemini models");
+    const models = (body.models || []).filter((model) => !model.supportedGenerationMethods || model.supportedGenerationMethods.includes("generateContent"));
+    return { provider, models: normalizeModelList(provider, models) };
+  }
+
+  if (provider === "claude") {
+    const apiKey = settings.apiKey || process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) throw new Error("Claude API key is not configured");
+    const response = await fetch("https://api.anthropic.com/v1/models?limit=1000", {
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error?.message || "Could not fetch Claude models");
+    return { provider, models: normalizeModelList(provider, body.data || []) };
+  }
+
+  const endpoint = customModelsEndpoint(settings.endpoint);
+  if (!endpoint) throw new Error("Custom endpoint is not configured");
+  if (!settings.apiKey) throw new Error("Custom API key is not configured");
+  const response = await fetch(endpoint, {
+    headers: { Authorization: `Bearer ${settings.apiKey}` },
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.error?.message || body.error || "Could not fetch custom models");
+  return { provider, models: normalizeModelList(provider, body.data || body.models || []) };
+}
+
 async function generateProductAutofill(payload) {
   if (!payload.imageDataUrl) {
     throw new Error("Product image is required");
@@ -817,6 +907,14 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       sendJson(res, 200, await store.writeAiSettings(JSON.parse(await readBody(req))));
+      return;
+    }
+
+    if (req.url === "/api/admin/ai/models" && req.method === "POST") {
+      if (!requireAdmin(req, res)) {
+        return;
+      }
+      sendJson(res, 200, await listAiModels(JSON.parse(await readBody(req))));
       return;
     }
 
