@@ -243,8 +243,6 @@ function productCountForCategory(categoryId) {
 }
 
 function renderStoreSidebar(subtotal) {
-  const ship = selectedShipping();
-  const currentShipping = subtotal >= ship.freeOver ? 0 : ship.cost;
   const selectedCategory = ui.category === "all" ? null : categoryById(ui.category);
   return `
     <aside class="store-sidebar" aria-label="Store filters and details">
@@ -264,29 +262,6 @@ function renderStoreSidebar(subtotal) {
               ${categoryImage(category) ? `<img src="${categoryImage(category)}" alt="" />` : `<span class="category-chip-dot"></span>`}
               <span>${escapeHtml(category.name)}</span>
               <strong>${productCountForCategory(category.id)}</strong>
-            </button>
-          `).join("")}
-        </div>
-      </section>
-
-      <section class="sidebar-card shipping-card">
-        <div class="sidebar-heading">
-          <span>Delivery</span>
-          <strong>Shipping cost</strong>
-        </div>
-        <div class="shipping-current">
-          <span>${escapeHtml(ship.zone)}</span>
-          <strong>${currentShipping === 0 ? "Free" : currency.format(currentShipping)}</strong>
-          <small>${escapeHtml(ship.eta)}${ship.freeOver > 0 ? ` | Free over ${currency.format(ship.freeOver)}` : ""}</small>
-        </div>
-        <div class="shipping-list">
-          ${state.shippingCosts.map((option) => `
-            <button class="shipping-option ${option.id === ship.id ? "active" : ""}" data-shipping-option="${option.id}">
-              <span>
-                <strong>${escapeHtml(option.zone)}</strong>
-                <small>${escapeHtml(option.eta)}</small>
-              </span>
-              <b>${option.cost === 0 ? "Free" : currency.format(option.cost)}</b>
             </button>
           `).join("")}
         </div>
