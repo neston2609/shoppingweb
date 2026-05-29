@@ -331,7 +331,7 @@ async function sendRegistrationConfirmation(customer, req) {
   await transport.sendMail({
     from: formatFrom(settings),
     to: customer.email,
-    subject: "Confirm your ColorCart registration",
+    subject: "Confirm your Japan Toy Shop registration",
     text: `Please confirm your registration by opening this link:\n\n${url}\n\nIf you did not register, you can ignore this email.`,
   });
 }
@@ -356,7 +356,7 @@ function orderEmailText(order) {
     "",
     `Delivery area: ${order.shipping.zone}`,
     "",
-    "ColorCart",
+    "Japan Toy Shop",
   ];
   return lines.join("\n");
 }
@@ -407,8 +407,8 @@ async function sendSmtpTest(to) {
   await transport.sendMail({
     from: formatFrom(settings),
     to,
-    subject: "ColorCart SMTP test",
-    text: "Your ColorCart Gmail SMTP settings are working.",
+    subject: "Japan Toy Shop SMTP test",
+    text: "Your Japan Toy Shop Gmail SMTP settings are working.",
   });
 }
 

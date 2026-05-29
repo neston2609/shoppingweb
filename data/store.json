@@ -122,5 +122,11 @@
     "Cancelled"
   ],
   "orders": [],
-  "members": []
+  "members": [],
+  "storeSettings": {
+    "storeName": "Japan Toy Shop",
+    "logo": "",
+    "storefrontHeadline": "Japan finds, toys, and collectibles.",
+    "storefrontMessage": "Browse Japanese products, choose delivery, and check out as a guest or member."
+  }
 }

@@ -114,10 +114,10 @@ function categoryIdByName(name) {
 
 function storeSettings() {
   return state.storeSettings || {
-    storeName: "ColorCart",
+    storeName: "Japan Toy Shop",
     logo: "",
-    storefrontHeadline: "Browse bright finds and check out in a snap.",
-    storefrontMessage: "Shop as a guest or create a member account at checkout. The backend keeps products, categories, shipping, and order status ready for the team.",
+    storefrontHeadline: "Japan finds, toys, and collectibles.",
+    storefrontMessage: "Browse Japanese products, choose delivery, and check out as a guest or member.",
   };
 }
 
@@ -303,7 +303,7 @@ function renderTopbar() {
         <div class="brand-mark">${settings.logo ? `<img src="${settings.logo}" alt="${escapeHtml(settings.storeName)} logo" />` : icon("cart")}</div>
         <div>
           <h1>${escapeHtml(settings.storeName)}</h1>
-          <p>Simple shopping manager</p>
+          <p>Japanese product shop</p>
         </div>
       </div>
       <nav class="nav-tabs" aria-label="Main navigation">
@@ -990,7 +990,7 @@ function renderSmtpAdmin() {
         <label>Gmail address <input class="field" name="username" type="email" autocomplete="username" required value="${escapeHtml(settings.username || "")}" /></label>
         <label>Gmail app password <input class="field" name="password" type="password" autocomplete="new-password" placeholder="${settings.passwordSet ? "Saved - leave blank to keep existing" : "16-character Gmail app password"}" ${settings.passwordSet ? "" : "required"} /></label>
         <div class="form-row">
-          <label>From name <input class="field" name="fromName" required value="${escapeHtml(settings.fromName || "ColorCart")}" /></label>
+          <label>From name <input class="field" name="fromName" required value="${escapeHtml(settings.fromName || "Japan Toy Shop")}" /></label>
           <label>From email <input class="field" name="fromEmail" type="email" required value="${escapeHtml(settings.fromEmail || settings.username || "")}" /></label>
         </div>
         <button class="primary-btn" type="submit">${icon("save")} Save SMTP</button>

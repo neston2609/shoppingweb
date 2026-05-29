@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS smtp_settings (
   secure boolean NOT NULL DEFAULT false,
   username text NOT NULL DEFAULT '',
   password text NOT NULL DEFAULT '',
-  from_name text NOT NULL DEFAULT 'ColorCart',
+  from_name text NOT NULL DEFAULT 'Japan Toy Shop',
   from_email text NOT NULL DEFAULT '',
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -123,9 +123,9 @@ CREATE TABLE IF NOT EXISTS ai_settings (
 
 CREATE TABLE IF NOT EXISTS store_settings (
   id integer PRIMARY KEY CHECK (id = 1),
-  store_name text NOT NULL DEFAULT 'ColorCart',
+  store_name text NOT NULL DEFAULT 'Japan Toy Shop',
   logo text NOT NULL DEFAULT '',
-  storefront_headline text NOT NULL DEFAULT 'Browse bright finds and check out in a snap.',
-  storefront_message text NOT NULL DEFAULT 'Shop as a guest or create a member account at checkout. The backend keeps products, categories, shipping, and order status ready for the team.',
+  storefront_headline text NOT NULL DEFAULT 'Japan finds, toys, and collectibles.',
+  storefront_message text NOT NULL DEFAULT 'Browse Japanese products, choose delivery, and check out as a guest or member.',
   updated_at timestamptz NOT NULL DEFAULT now()
 );

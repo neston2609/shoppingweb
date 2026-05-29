@@ -1,4 +1,4 @@
-# ColorCart Shopping Application
+# Japan Toy Shop Shopping Application
 
 A shopping application with a storefront, backend management area, and PostgreSQL persistence.
 

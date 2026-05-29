@@ -188,7 +188,7 @@ function createPostgresStore(seedState) {
         secure boolean NOT NULL DEFAULT false,
         username text NOT NULL DEFAULT '',
         password text NOT NULL DEFAULT '',
-        from_name text NOT NULL DEFAULT 'ColorCart',
+        from_name text NOT NULL DEFAULT 'Japan Toy Shop',
         from_email text NOT NULL DEFAULT '',
         updated_at timestamptz NOT NULL DEFAULT now()
       );
@@ -225,10 +225,10 @@ function createPostgresStore(seedState) {
 
       CREATE TABLE IF NOT EXISTS store_settings (
         id integer PRIMARY KEY CHECK (id = 1),
-        store_name text NOT NULL DEFAULT 'ColorCart',
+        store_name text NOT NULL DEFAULT 'Japan Toy Shop',
         logo text NOT NULL DEFAULT '',
-        storefront_headline text NOT NULL DEFAULT 'Browse bright finds and check out in a snap.',
-        storefront_message text NOT NULL DEFAULT 'Shop as a guest or create a member account at checkout. The backend keeps products, categories, shipping, and order status ready for the team.',
+        storefront_headline text NOT NULL DEFAULT 'Japan finds, toys, and collectibles.',
+        storefront_message text NOT NULL DEFAULT 'Browse Japanese products, choose delivery, and check out as a guest or member.',
         updated_at timestamptz NOT NULL DEFAULT now()
       );
 
@@ -316,10 +316,10 @@ function createPostgresStore(seedState) {
         joinedAt: member.joinedAt.toISOString(),
       })),
       storeSettings: storeSettings.rows[0] || {
-        storeName: "ColorCart",
+        storeName: "Japan Toy Shop",
         logo: "",
-        storefrontHeadline: "Browse bright finds and check out in a snap.",
-        storefrontMessage: "Shop as a guest or create a member account at checkout. The backend keeps products, categories, shipping, and order status ready for the team.",
+        storefrontHeadline: "Japan finds, toys, and collectibles.",
+        storefrontMessage: "Browse Japanese products, choose delivery, and check out as a guest or member.",
       },
     };
   }
@@ -447,7 +447,7 @@ function createPostgresStore(seedState) {
       port: Number(row.port || 587),
       secure: Boolean(row.secure),
       username: row.username || "",
-      fromName: row.fromName || "ColorCart",
+      fromName: row.fromName || "Japan Toy Shop",
       fromEmail: row.fromEmail || "",
       passwordSet: Boolean(row.password),
     };
@@ -481,7 +481,7 @@ function createPostgresStore(seedState) {
         Boolean(settings.secure),
         String(settings.username || "").trim(),
         password,
-        String(settings.fromName || "ColorCart").trim(),
+        String(settings.fromName || "Japan Toy Shop").trim(),
         String(settings.fromEmail || settings.username || "").trim(),
       ],
     );
@@ -500,7 +500,7 @@ function createPostgresStore(seedState) {
         WHERE id = 1
       `,
       [
-        String(settings.storeName || "ColorCart").trim(),
+        String(settings.storeName || "Japan Toy Shop").trim(),
         String(settings.logo || ""),
         String(settings.storefrontHeadline || "").trim(),
         String(settings.storefrontMessage || "").trim(),
